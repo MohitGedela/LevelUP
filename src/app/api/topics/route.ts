@@ -87,8 +87,23 @@ Return the topics in this exact JSON format:
       throw new Error('No response from Gemini AI');
     }
 
-    // Parse the response
-    const parsedResponse = JSON.parse(response);
+    // Parse the response - FIX: Extract JSON from markdown
+    let parsedResponse;
+    try {
+      // First try to extract JSON from markdown formatting
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        parsedResponse = JSON.parse(jsonMatch[0]);
+      } else {
+        // If no object found, try to parse the response directly
+        parsedResponse = JSON.parse(response);
+      }
+    } catch (parseError) {
+      console.error('Failed to parse AI response:', parseError);
+      console.error('Raw AI response:', response);
+      throw new Error('Failed to parse AI response');
+    }
+
     let topics: Topic[] = parsedResponse.topics || [];
 
     // Validate and clean up topics
