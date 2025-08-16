@@ -25,8 +25,21 @@ export default function FinalExamPage() {
   const [debugInfo, setDebugInfo] = useState<Record<string, string> | null>(null);
 
   useEffect(() => {
-    // Generate final exam when component mounts
-    generateFinalExam();
+    // Just check if data exists, don't auto-generate
+    const selectedTopicsData = localStorage.getItem('selectedTopics');
+    const generatedTopicsData = localStorage.getItem('generatedTopics');
+    const fileContent = localStorage.getItem('fileContent');
+    
+    console.log('Debug localStorage:', {
+      selectedTopicsData,
+      generatedTopicsData: generatedTopicsData ? 'Found' : 'Missing',
+      fileContent: fileContent ? `${fileContent.length} chars` : 'Missing'
+    });
+    
+    if (!selectedTopicsData || !generatedTopicsData || !fileContent) {
+      setError('Please upload a document and select topics first before generating the final exam.');
+    }
+    setIsLoading(false);
   }, []);
 
   const generateFinalExam = async () => {
@@ -55,7 +68,7 @@ export default function FinalExamPage() {
         throw new Error('No document content found. Please upload a document first.');
       }
       
-      const selectedIds: number[] = JSON.parse(selectedTopicsData);
+      const selectedIds: string[] = JSON.parse(selectedTopicsData); // Changed from number[] to string[]
       const allTopics = JSON.parse(generatedTopicsData);
       
       // Get selected topic IDs from localStorage
@@ -64,10 +77,14 @@ export default function FinalExamPage() {
         return;
       }
       
-      // Get the actual topic objects for selected IDs
-      const selectedTopics = allTopics.filter((topic: Topic) => selectedIds.includes(parseInt(topic.id)));
+      // Get the actual topic objects for selected IDs - FIX: Handle string IDs properly
+      const selectedTopics = allTopics.filter((topic: Topic) => {
+        // Don't parse to int - just compare strings directly
+        return selectedIds.includes(topic.id);
+      });
       
       if (selectedTopics.length === 0) {
+        console.error('Debug info:', { selectedIds, allTopics, selectedTopics });
         throw new Error('No valid topics found. Please upload a document and select topics first.');
       }
       
@@ -213,7 +230,7 @@ export default function FinalExamPage() {
               onClick={generateFinalExam}
               className="bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105 active:scale-95"
             >
-              Try Again
+              Generate Final Exam
             </button>
             
             <div className="pt-4 border-t border-gray-700">
